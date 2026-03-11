@@ -1,0 +1,35 @@
+server:
+  port: 1111
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    nacos:
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        username: nacos
+        password: RUlVIM0zZG
+        shared-configs:
+          - data-id: common-base
+            group: DEFAULT_GROUP
+            refresh: true
+      discovery:
+        server-addr: localhost:8848  # Nacos服务器地址
+        namespace: public           # 命名空间（默认public）
+        username: nacos
+        password: RUlVIM0zZG
+    gateway:
+      discovery:
+        locator:
+          enabled: true             # 启用服务发现路由
+          lower-case-service-id: true # 服务ID小写处理
+          filters: StripPrefix=1     # 移除路径前缀（服务名）
+      #routes:
+      #  - id: passport-service      # 示例静态路由（可选）
+      #   uri: lb://passport-service
+      #    predicates:
+      #      - Path=/auth/**
+      #    filters:
+      #      - StripPrefix=1

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.andy.passport.mapper.SystemOrgMapper">
+
+    <select id="recursionOrgById" resultType="com.andy.passport.entity.SystemOrg">
+        WITH RECURSIVE sub_org AS (
+            -- 初始查询（锚点）
+            SELECT *
+            FROM system_org
+            WHERE id = #{orgId}
+            UNION ALL
+            -- 递归查询
+            SELECT d.*
+            FROM system_org d
+                     JOIN sub_org sd ON d.parent_id = sd.id
+        )
+        SELECT * FROM sub_org
+    </select>
+</mapper>

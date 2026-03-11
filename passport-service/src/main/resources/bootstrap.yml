@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: passport-service
+  profiles:
+    active: dev
+  main:
+    allow-bean-definition-overriding: true
+  config:
+    import:
+      - nacos:${spring.application.name}.yml?group=DEFAULT_GROUP
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.0.102:8848
+        namespace: public
+        username: nacos
+        password: RUlVIM0zZG
+      config:
+        server-addr: 192.168.0.102:8848
+        file-extension: yaml
+        username: nacos
+        password: RUlVIM0zZG
+        namespace: public
+        group: DEFAULT_GROUP
+
+
