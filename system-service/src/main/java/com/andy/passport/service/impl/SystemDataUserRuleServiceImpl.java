@@ -1,22 +1,30 @@
 package com.andy.passport.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.andy.common.entity.BaseEntityConstants;
 import com.andy.common.exception.BusinessException;
 import com.andy.passport.dto.SystemDataUserRuleEditDto;
-import com.andy.passport.dto.SystemDataUserRuleQueryDto;
+import com.andy.passport.entity.SystemDataRoleRule;
 import com.andy.passport.entity.SystemDataUserRule;
+import com.andy.passport.entity.SystemUserRole;
 import com.andy.passport.mapper.SystemDataUserRuleMapper;
+import com.andy.passport.service.SystemDataRoleRuleService;
 import com.andy.passport.service.SystemDataUserRuleService;
+import com.andy.passport.service.SystemUserRoleService;
+import com.andy.passport.vo.SystemDataRoleRuleVo;
+import com.andy.passport.vo.SystemDataUserFinalRuleVo;
+import com.andy.passport.vo.SystemDataUserRuleVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -29,98 +37,126 @@ import java.util.Date;
 @Service
 public class SystemDataUserRuleServiceImpl extends ServiceImpl<SystemDataUserRuleMapper, SystemDataUserRule> implements SystemDataUserRuleService {
 
-    /**
-     * 分页查询用户数据权限规则表
-     * @param page
-     * @param systemDataUserRuleQueryDto
-     * @return
-     */
-    @Override
-    public IPage<SystemDataUserRule> page(Page<SystemDataUserRule> page, SystemDataUserRuleQueryDto systemDataUserRuleQueryDto) {
-        LambdaQueryWrapper<SystemDataUserRule> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(null != systemDataUserRuleQueryDto.getUserId(), SystemDataUserRule::getUserId, systemDataUserRuleQueryDto.getUserId())
-                .eq(null != systemDataUserRuleQueryDto.getDataId(), SystemDataUserRule::getDataId, systemDataUserRuleQueryDto.getDataId())
-                .in(SystemDataUserRule::getStatus, Arrays.asList(BaseEntityConstants.Ok_Disable))
-                .orderByDesc(SystemDataUserRule::getCreateTime);
-        return super.page(page, queryWrapper);
-    }
+    @Resource
+    private SystemUserRoleService systemUserRoleService;
+
+    @Resource
+    private SystemDataRoleRuleService systemDataRoleRuleService;
 
     /**
-     * 查询单个用户数据权限规则
-     * @param id
+     * 查询用户下的数据权限列表
+     * @param userId
      * @return
      */
     @Override
-    public SystemDataUserRule queryInfo(Integer id){
-        SystemDataUserRule systemDataUserRule = this.getById(id);
-        if(null == systemDataUserRule){
-            throw new BusinessException("数据错误");
+    public List<SystemDataUserRuleVo> queryList(Integer userId) {
+        if (userId == null) {
+            throw new BusinessException("用户ID不能为空");
         }
-        return systemDataUserRule;
+        return baseMapper.queryList(userId);
     }
 
     /**
-     * 新增或编辑用户数据权限规则
+     * 新增或编辑用户数据权限规则（批量授权）
      * @param systemDataUserRuleEditDto
      * @return
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Integer edit(SystemDataUserRuleEditDto systemDataUserRuleEditDto){
-        SystemDataUserRule systemDataUserRule;
-        if(null != systemDataUserRuleEditDto.getId()){
-            systemDataUserRule = this.getById(systemDataUserRuleEditDto.getId());
-            if(null == systemDataUserRule){
-                throw new BusinessException("数据错误");
+    public Boolean edit(SystemDataUserRuleEditDto systemDataUserRuleEditDto) {
+        if (systemDataUserRuleEditDto.getUserId() == null) {
+            throw new BusinessException("用户ID不能为空");
+        }
+        if (CollectionUtils.isEmpty(systemDataUserRuleEditDto.getDataIds())) {
+            throw new BusinessException("资源ID列表不能为空");
+        }
+
+        // 先删除该用户下所有现有的数据权限规则（逻辑删除）
+        LambdaQueryWrapper<SystemDataUserRule> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SystemDataUserRule::getUserId, systemDataUserRuleEditDto.getUserId())
+               .in(SystemDataUserRule::getStatus, BaseEntityConstants.Ok_Disable);
+        List<SystemDataUserRule> existingRules = this.list(wrapper);
+
+        for (SystemDataUserRule rule : existingRules) {
+            rule.setStatus(BaseEntityConstants.Status_Remove);
+            rule.setUpdateTime(new Date());
+        }
+        if (!existingRules.isEmpty()) {
+            this.updateBatchById(existingRules);
+        }
+
+        // 批量新增新的数据权限规则
+        for (Integer dataId : systemDataUserRuleEditDto.getDataIds()) {
+            SystemDataUserRule rule = new SystemDataUserRule();
+            rule.setUserId(systemDataUserRuleEditDto.getUserId());
+            rule.setDataId(dataId);
+            rule.setRuleType(systemDataUserRuleEditDto.getRuleType());
+            rule.setStatus(BaseEntityConstants.Status_OK);
+            rule.setCreateTime(new Date());
+            this.save(rule);
+        }
+
+        return true;
+    }
+
+    /**
+     * 查询用户最终的数据权限列表（用户数据权限和角色数据权限的并集）
+     * @param userId
+     * @return
+     */
+    @Override
+    public List<SystemDataUserFinalRuleVo> queryFinalList(Integer userId) {
+        if (userId == null) {
+            throw new BusinessException("用户ID不能为空");
+        }
+
+        List<SystemDataUserFinalRuleVo> finalList = new ArrayList<>();
+
+        // 1. 查询用户直接授权的数据权限
+        List<SystemDataUserRuleVo> userRules = this.queryList(userId);
+        for (SystemDataUserRuleVo userRule : userRules) {
+            SystemDataUserFinalRuleVo finalVo = new SystemDataUserFinalRuleVo();
+            finalVo.setId(userRule.getId());
+            finalVo.setDataId(userRule.getDataId());
+            finalVo.setRuleType(userRule.getRuleType());
+            finalVo.setSourceType("USER");
+            finalVo.setDataName(userRule.getDataName());
+            finalVo.setDataTable(userRule.getDataTable());
+            finalList.add(finalVo);
+        }
+
+        // 2. 查询用户所属角色的数据权限
+        List<SystemUserRole> userRoles = systemUserRoleService.list(
+                new LambdaQueryWrapper<SystemUserRole>()
+                        .eq(SystemUserRole::getUserId, userId)
+        );
+
+        for (SystemUserRole userRole : userRoles) {
+            List<SystemDataRoleRuleVo> roleRules = systemDataRoleRuleService.queryList(
+                    new com.andy.passport.dto.SystemDataRoleRuleQueryDto() {{
+                        setRoleId(userRole.getRoleId());
+                    }}
+            );
+
+            for (SystemDataRoleRuleVo roleRule : roleRules) {
+                // 检查是否已存在相同资源ID的数据权限
+                boolean exists = finalList.stream()
+                        .anyMatch(item -> item.getDataId().equals(roleRule.getDataId()));
+
+                if (!exists) {
+                    SystemDataUserFinalRuleVo finalVo = new SystemDataUserFinalRuleVo();
+                    finalVo.setId(roleRule.getId());
+                    finalVo.setDataId(roleRule.getDataId());
+                    finalVo.setRuleType(roleRule.getRuleType());
+                    finalVo.setSourceType("ROLE");
+                    finalVo.setDataName(roleRule.getDataName());
+                    finalVo.setDataTable(roleRule.getDataTable());
+                    finalList.add(finalVo);
+                }
             }
-            BeanUtil.copyProperties(systemDataUserRuleEditDto, systemDataUserRule);
-            systemDataUserRule.setUpdateTime(new Date());
-        }else {
-            systemDataUserRule = new SystemDataUserRule();
-            BeanUtil.copyProperties(systemDataUserRuleEditDto, systemDataUserRule);
-            systemDataUserRule.setStatus(BaseEntityConstants.Status_OK);
-            systemDataUserRule.setCreateTime(new Date());
         }
-        super.saveOrUpdate(systemDataUserRule);
-        return systemDataUserRule.getId();
-    }
 
-    /**
-     * 逻辑删除
-     * @param id
-     * @return
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Boolean delete(Integer id) {
-        SystemDataUserRule systemDataUserRule = this.getById(id);
-        if(null == systemDataUserRule){
-            throw new BusinessException("数据错误");
-        }
-        systemDataUserRule.setStatus(BaseEntityConstants.Status_Remove);
-        systemDataUserRule.setUpdateTime(new Date());
-        return super.updateById(systemDataUserRule);
-    }
-
-    /**
-     * 启用/禁用用户数据权限规则
-     * @param id
-     * @param status
-     * @return
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Boolean disable(Integer id, Integer status) {
-        SystemDataUserRule systemDataUserRule = this.getById(id);
-        if(null == systemDataUserRule){
-            throw new BusinessException("数据错误");
-        }
-        if(1 != status && 0 != status){
-            throw new BusinessException("状态错误");
-        }
-        systemDataUserRule.setStatus(status);
-        systemDataUserRule.setUpdateTime(new Date());
-        return super.updateById(systemDataUserRule);
+        return finalList;
     }
 
 }

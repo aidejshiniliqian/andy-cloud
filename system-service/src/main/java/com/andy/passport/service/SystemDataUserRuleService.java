@@ -3,9 +3,11 @@ package com.andy.passport.service;
 import com.andy.passport.dto.SystemDataUserRuleEditDto;
 import com.andy.passport.dto.SystemDataUserRuleQueryDto;
 import com.andy.passport.entity.SystemDataUserRule;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.andy.passport.vo.SystemDataUserFinalRuleVo;
+import com.andy.passport.vo.SystemDataUserRuleVo;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -17,14 +19,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface SystemDataUserRuleService extends IService<SystemDataUserRule> {
 
-    IPage<SystemDataUserRule> page(Page<SystemDataUserRule> page, SystemDataUserRuleQueryDto systemDataUserRuleQueryDto);
+    List<SystemDataUserRuleVo> queryList(Integer userId);
 
-    SystemDataUserRule queryInfo(Integer id);
+    Boolean edit(SystemDataUserRuleEditDto systemDataUserRuleEditDto);
 
-    Integer edit(SystemDataUserRuleEditDto systemDataUserRuleEditDto);
-
-    Boolean delete(Integer id);
-
-    Boolean disable(Integer id, Integer status);
+    List<SystemDataUserFinalRuleVo> queryFinalList(Integer userId);
 
 }

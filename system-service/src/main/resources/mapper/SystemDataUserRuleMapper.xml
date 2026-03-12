@@ -2,4 +2,20 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.andy.passport.mapper.SystemDataUserRuleMapper">
 
+    <select id="queryList" resultType="com.andy.passport.vo.SystemDataUserRuleVo">
+        SELECT
+            r.id,
+            r.user_id,
+            r.data_id,
+            r.rule_type,
+            r.status,
+            d.data_name,
+            d.data_table
+        FROM system_data_user_rule r
+        LEFT JOIN system_data_resource d ON r.data_id = d.id
+        WHERE r.user_id = #{userId}
+          AND r.status IN (0, 1)
+        ORDER BY r.create_time DESC
+    </select>
+
 </mapper>
