@@ -45,6 +45,15 @@ public class SystemDataResourceServiceImpl extends ServiceImpl<SystemDataResourc
         return super.page(page, queryWrapper);
     }
 
+    @Override
+    public IPage<SystemDataResource> effectivePage(Page<SystemDataResource> page, SystemDataResourceQueryDto systemDataResourceQueryDto) {
+        LambdaQueryWrapper<SystemDataResource> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(StringUtils.isNotBlank(systemDataResourceQueryDto.getDataName()), SystemDataResource::getDataName, systemDataResourceQueryDto.getDataName())
+                .eq(SystemDataResource::getStatus, BaseEntityConstants.Status_OK)
+                .orderByAsc(SystemDataResource::getSort);
+        return super.page(page, queryWrapper);
+    }
+
     /**
      * 查询单个数据资源
      * @param id

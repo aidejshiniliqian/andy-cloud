@@ -28,9 +28,9 @@ public class SystemDataRoleRuleController {
     @Autowired
     private SystemDataResourceService systemDataResourceService;
 
-    @GetMapping("/list/{roleId}")
+    @GetMapping("/list")
     @Operation(summary = "查询角色数据权限规则列表")
-    public CommonResult<List<SystemDataRoleRuleVo>> getByRoleId(@PathVariable("roleId") Integer roleId) {
+    public CommonResult<List<SystemDataRoleRuleVo>> list(@RequestParam("roleId") Integer roleId) {
         List<SystemDataRoleRule> roleRules = systemDataRoleRuleService.getByRoleId(roleId);
         if (roleRules.isEmpty()) {
             return CommonResult.success(List.of());
@@ -58,9 +58,9 @@ public class SystemDataRoleRuleController {
         return CommonResult.success(voList);
     }
 
-    @PostMapping("/bind")
-    @Operation(summary = "绑定角色数据权限规则")
-    public CommonResult<Boolean> bindRoleDataRules(@RequestBody SystemDataRoleRuleBindDto dto) {
+    @PostMapping("/edit")
+    @Operation(summary = "编辑角色数据权限规则")
+    public CommonResult<Boolean> edit(@RequestBody SystemDataRoleRuleBindDto dto) {
         return CommonResult.success(systemDataRoleRuleService.bindRoleDataRules(dto));
     }
 }

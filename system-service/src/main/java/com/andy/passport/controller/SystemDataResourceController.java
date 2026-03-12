@@ -44,16 +44,12 @@ public class SystemDataResourceController {
         return CommonResult.success(systemDataResourceIPage.convert(systemDataResource -> BeanUtil.copyProperties(systemDataResource, SystemDataResourceVo.class)));
     }
 
-    /**
-     * 查询单个数据资源
-     * @param id
-     * @return
-     */
-    @GetMapping("/info")
-    @Operation(summary = "查询单个数据资源")
-    public CommonResult<SystemDataResourceVo> queryInfo(Integer id){
-        SystemDataResource systemDataResource = systemDataResourceService.getById(id);
-        return CommonResult.success(BeanUtil.copyProperties(systemDataResource, SystemDataResourceVo.class));
+    @GetMapping("/effective/page")
+    @Operation(summary = "分页查询有效数据资源表")
+    public CommonResult<IPage<SystemDataResourceVo>> queryEffectivePage(Page<SystemDataResource> page,
+                                                                        SystemDataResourceQueryDto systemDataResourceQueryDto){
+        IPage<SystemDataResource> systemDataResourceIPage = systemDataResourceService.effectivePage(page, systemDataResourceQueryDto);
+        return CommonResult.success(systemDataResourceIPage.convert(systemDataResource -> BeanUtil.copyProperties(systemDataResource, SystemDataResourceVo.class)));
     }
 
     /**
