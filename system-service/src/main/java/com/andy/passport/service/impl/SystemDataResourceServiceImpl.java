@@ -46,6 +46,21 @@ public class SystemDataResourceServiceImpl extends ServiceImpl<SystemDataResourc
     }
 
     /**
+     * 分页查询有效数据资源表(status=0)
+     * @param page
+     * @param systemDataResourceQueryDto
+     * @return
+     */
+    @Override
+    public IPage<SystemDataResource> pageEffective(Page<SystemDataResource> page, SystemDataResourceQueryDto systemDataResourceQueryDto) {
+        LambdaQueryWrapper<SystemDataResource> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.like(StringUtils.isNotBlank(systemDataResourceQueryDto.getDataName()), SystemDataResource::getDataName, systemDataResourceQueryDto.getDataName())
+                        .eq(SystemDataResource::getStatus, BaseEntityConstants.Status_OK)
+                        .orderByAsc(SystemDataResource::getSort);
+        return super.page(page, queryWrapper);
+    }
+
+    /**
      * 查询单个数据资源
      * @param id
      * @return
