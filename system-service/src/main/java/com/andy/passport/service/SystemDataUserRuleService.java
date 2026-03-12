@@ -1,16 +1,17 @@
 package com.andy.passport.service;
 
+import com.andy.passport.dto.SystemDataUserRuleBindDto;
 import com.andy.passport.entity.SystemDataUserRule;
+import com.andy.passport.vo.SystemDataUserRuleVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
-/**
- * <p>
- * 用户数据权限规则表 服务类
- * </p>
- *
- * @author Andy.Liu
- * @since 2025-02-26
- */
+import java.util.List;
+
 public interface SystemDataUserRuleService extends IService<SystemDataUserRule> {
 
+    List<SystemDataUserRule> getByUserId(Integer userId);
+
+    Boolean bindUserDataRules(SystemDataUserRuleBindDto dto);
+
+    List<SystemDataUserRuleVo> getFinalDataRulesByUserId(Integer userId);
 }
