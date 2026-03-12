@@ -19,6 +19,8 @@ public interface SystemDataResourceService extends IService<SystemDataResource> 
 
     IPage<SystemDataResource> page(Page<SystemDataResource> page, SystemDataResourceQueryDto systemDataResourceQueryDto);
 
+    IPage<SystemDataResource> queryEffectivePage(Page<SystemDataResource> page, SystemDataResourceQueryDto systemDataResourceQueryDto);
+
     SystemDataResource queryInfo(Integer id);
 
     Integer edit(SystemDataResourceEditDto systemDataResourceEditDto);
