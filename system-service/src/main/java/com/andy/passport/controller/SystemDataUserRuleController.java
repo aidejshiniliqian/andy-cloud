@@ -63,4 +63,10 @@ public class SystemDataUserRuleController {
     public CommonResult<Boolean> bindUserDataRules(@RequestBody SystemDataUserRuleBindDto dto) {
         return CommonResult.success(systemDataUserRuleService.bindUserDataRules(dto));
     }
+
+    @GetMapping("/final/list/{userId}")
+    @Operation(summary = "查询用户最终数据权限（用户授权+角色授权并集）")
+    public CommonResult<List<SystemDataUserRuleVo>> getFinalDataRules(@PathVariable("userId") Integer userId) {
+        return CommonResult.success(systemDataUserRuleService.getFinalDataRulesByUserId(userId));
+    }
 }
