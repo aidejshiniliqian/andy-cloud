@@ -49,4 +49,15 @@ public class SystemDataUserRuleController {
         return CommonResult.success(systemDataUserRuleService.bindUserDataRules(dto));
     }
 
+    /**
+     * 查询用户最终数据权限列表（用户数据权限 + 角色数据权限的并集）
+     * @param userId 用户ID
+     * @return 最终数据权限列表
+     */
+    @GetMapping("/final/list")
+    @Operation(summary = "查询用户最终数据权限列表")
+    public CommonResult<List<SystemDataUserRule>> getFinalUserDataRules(@RequestParam("userId") Integer userId){
+        return CommonResult.success(systemDataUserRuleService.getFinalUserDataRules(userId));
+    }
+
 }

@@ -30,4 +30,11 @@ public interface SystemDataUserRuleService extends IService<SystemDataUserRule> 
      */
     Boolean bindUserDataRules(SystemDataUserRuleBindDto dto);
 
+    /**
+     * 查询用户最终数据权限列表（用户数据权限 + 角色数据权限的并集）
+     * @param userId 用户ID
+     * @return 最终数据权限列表
+     */
+    List<SystemDataUserRule> getFinalUserDataRules(Integer userId);
+
 }
