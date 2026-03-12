@@ -21,4 +21,10 @@ public class SystemDataRoleRuleVo {
     @Schema(description = "状态，0 ==正常，1==禁用，2==删除")
     private Integer status;
 
+    @Schema(description = "数据资源名称")
+    private String dataName;
+
+    @Schema(description = "数据资源表名")
+    private String dataTable;
+
 }

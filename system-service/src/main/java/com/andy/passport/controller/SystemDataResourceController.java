@@ -45,6 +45,20 @@ public class SystemDataResourceController {
     }
 
     /**
+     * 查询有效的数据资源列表（仅status为0的数据）
+     * @param page
+     * @param systemDataResourceQueryDto
+     * @return
+     */
+    @GetMapping("/effective/page")
+    @Operation(summary = "查询有效的数据资源列表")
+    public CommonResult<IPage<SystemDataResourceVo>> queryEffectivePage(Page<SystemDataResource> page,
+                                                                        SystemDataResourceQueryDto systemDataResourceQueryDto){
+        IPage<SystemDataResource> systemDataResourceIPage = systemDataResourceService.queryEffectivePage(page, systemDataResourceQueryDto);
+        return CommonResult.success(systemDataResourceIPage.convert(systemDataResource -> BeanUtil.copyProperties(systemDataResource, SystemDataResourceVo.class)));
+    }
+
+    /**
      * 查询单个数据资源
      * @param id
      * @return
